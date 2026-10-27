@@ -420,11 +420,6 @@ def _b(value: str) -> bool:
     return str(value).lower() in ("true", "1", "on", "yes")
 
 
-@app.get("/")
-async def index():
-    return FileResponse(STATIC_DIR / "index.html")
-
-
 @app.get("/api/status")
 async def status():
     try:
@@ -1096,9 +1091,28 @@ async def open_folder():
     return {"ok": True}
 
 
+@app.post("/api/open-path")
+async def open_path(payload: dict):
+    p = Path(os.path.expanduser(str(payload.get("path") or "")))
+    if not p.exists():
+        raise HTTPException(404, "路径不存在")
+    subprocess.Popen(["open", str(p)])
+    return {"ok": True}
+
+
 @app.exception_handler(HTTPException)
 async def http_exc_handler(_, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+# 前端：优先托管 React 构建产物 frontend/dist，否则回退到 legacy static
+DIST_DIR = Path(__file__).parent / "frontend" / "dist"
+if DIST_DIR.exists():
+    app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="dist")
+else:
+    @app.get("/")
+    async def index():
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 if __name__ == "__main__":
