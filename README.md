@@ -39,7 +39,7 @@
 ~/breeze-env/bin/python ~/voiceforge/app.py    # 打开 http://127.0.0.1:7860
 ```
 
-或使用 `启动控制台.command` / `停止控制台.command`。
+停止：`pkill -f "voiceforge/app.py"`（会同时释放模型占用的内存）。
 
 ## 前端开发
 
