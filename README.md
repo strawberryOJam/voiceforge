@@ -8,7 +8,17 @@
 ## 结构
 
 ```
-├── app.py                 # FastAPI 后端（MLX 推理 + 任务队列 + 全部 API）
+├── app.py                 # 入口：创建应用并启动 uvicorn（薄）
+├── server/                # FastAPI 后端（分层）
+│   ├── config.py          # 配置层：路径/设置/模型清单/常量/工具
+│   ├── engine.py          # 引擎层：MLX 加载、分段、合成、音频后处理（不感知 HTTP）
+│   ├── jobs.py            # 任务系统：队列 + 工作线程 + 四类任务执行
+│   ├── app.py             # 应用工厂：组装路由、异常处理、前端托管
+│   └── routers/           # HTTP 层
+│       ├── system.py      # 状态/设置/模型配置与下载/统计/系统操作
+│       ├── synthesis.py   # 合成、对话配音、任务查询/取消/再生成
+│       ├── library.py     # 音色库、文稿模板
+│       └── history.py     # 历史记录与音频文件服务
 ├── frontend/              # React 前端（Vite 构建）
 │   └── src/
 │       ├── store.jsx      # 全局状态：任务轮询/队列、模型切换、数据加载
@@ -16,6 +26,10 @@
 │       └── views/         # 工作台/音色库/模板/历史/仪表盘/设置
 └── frontend/dist/         # 构建产物（后端直接托管）
 ```
+
+分层约定：`routers` 只做参数校验与组装，不碰 MLX；`engine` 只做推理与音频处理，
+不感知 HTTP；`jobs` 串联两者并管理生命周期；`config` 被所有层运行时访问
+（输出目录支持热更新，因此禁止 from-import 绑定）。
 
 数据（音色库、模板、设置、模型配置）存放在 `~/models/breeze-out/ui/`，不随仓库管理。
 
