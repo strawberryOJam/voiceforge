@@ -194,7 +194,7 @@ export default function Editor() {
 
           {m.showRef && (
             <div className="field" id="refField">
-              <label>参考音频 <span className="label-hint">3–15 秒干净人声</span></label>
+              <label>参考音频 <span className="label-hint">3–15 秒干净人声 · 支持 m4a / mp3 / wav</span></label>
               <div className="ref-row">
                 <input type="file" accept="audio/*" className="file-input"
                   onChange={(e) => {

@@ -152,6 +152,27 @@ def _gen_one(model, text, instruct, ref_audio, ref_text, cfg_scale, seed):
     return (np.concatenate(chunks) if len(chunks) > 1 else chunks[0]), sr
 
 
+def _convert_to_wav(src: str) -> str:
+    """把 m4a/aac/mp3 等转成单声道 24kHz WAV（模型只认 soundfile 可读格式）；已是 wav 则原样返回。"""
+    p = Path(src)
+    if p.suffix.lower() == ".wav":
+        return src
+    if shutil.which("ffmpeg") is None:
+        raise RuntimeError("参考音频为 " + (p.suffix or "未知") + " 格式，需要 ffmpeg 转换为 WAV，请先安装 ffmpeg")
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+        dst = f.name
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(p),
+             "-ar", "24000", "-ac", "1", dst],
+            check=True, capture_output=True,
+        )
+        return dst
+    except Exception:
+        Path(dst).unlink(missing_ok=True)
+        raise RuntimeError("参考音频转 WAV 失败（ffmpeg 无法解码 " + (p.suffix or "该格式") + "）")
+
+
 def _ffmpeg_finish(audio: np.ndarray, sr: int, normalize: bool, speed: float, fmt: str, base: Path, target: float = -16.0) -> Path:
     """响度归一化 + 语速调整 + 编码（wav/mp3），写出到 base 对应扩展名的路径并返回该路径。"""
     speed = min(2.0, max(0.5, float(speed or 1.0)))
@@ -605,6 +626,15 @@ async def synthesize(
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
             f.write(await ref_audio.read())
             ref_tmp = f.name
+        try:
+            converted = _convert_to_wav(ref_tmp)
+            if converted != ref_tmp:
+                Path(ref_tmp).unlink(missing_ok=True)
+                ref_tmp = converted
+        except RuntimeError as exc:
+            Path(ref_tmp).unlink(missing_ok=True)
+            ref_tmp = None
+            raise HTTPException(400, str(exc))
     elif ref_voice_id:
         vp = VOICES_DIR / f"{ref_voice_id}.wav"
         if vp.exists():
@@ -927,8 +957,18 @@ async def add_voice(
     vid = uuid_hex()
     has_ref = False
     if ref_audio is not None and ref_audio.filename:
-        (VOICES_DIR / f"{vid}.wav").write_bytes(await ref_audio.read())
-        has_ref = True
+        suffix = Path(ref_audio.filename).suffix or ".wav"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(await ref_audio.read())
+            tmp_ref = f.name
+        try:
+            wav_path = _convert_to_wav(tmp_ref)
+            shutil.move(wav_path, VOICES_DIR / f"{vid}.wav")
+            has_ref = True
+        except RuntimeError as exc:
+            raise HTTPException(400, str(exc))
+        finally:
+            Path(tmp_ref).unlink(missing_ok=True)
     elif ref_voice_id:
         src = VOICES_DIR / f"{ref_voice_id}.wav"
         if src.exists():
