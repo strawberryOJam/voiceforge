@@ -42,7 +42,6 @@ VOICES_JSON = VOICES_DIR / "voices.json"
 TEMPLATES_JSON = DATA_DIR / "templates.json"
 MODELS_JSON = DATA_DIR / "models.json"
 SETTINGS_PATH = DATA_DIR / "settings.json"
-STATIC_DIR = Path(__file__).parent / "static"
 
 DEFAULT_MODELS = {
     "4bit": {
@@ -413,7 +412,6 @@ def _worker() -> None:
 threading.Thread(target=_worker, daemon=True, name="tts-worker").start()
 
 app = FastAPI(title="声铸 VoiceForge · 本地语音工坊", docs_url=None, redoc_url=None)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def _b(value: str) -> bool:
@@ -1105,14 +1103,14 @@ async def http_exc_handler(_, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
-# 前端：优先托管 React 构建产物 frontend/dist，否则回退到 legacy static
+# 前端：托管 React 构建产物 frontend/dist
 DIST_DIR = Path(__file__).parent / "frontend" / "dist"
 if DIST_DIR.exists():
     app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="dist")
 else:
     @app.get("/")
     async def index():
-        return FileResponse(STATIC_DIR / "index.html")
+        return JSONResponse({"hint": "前端未构建：cd frontend && npm install && npm run build"})
 
 
 if __name__ == "__main__":
