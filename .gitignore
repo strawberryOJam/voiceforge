@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.DS_Store
+
+# 数据与生成物（不进版本库）
+*.wav
+*.mp3
+models/
+voices/
+*.json.bak
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+
+# 日志
+*.log
