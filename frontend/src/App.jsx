@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useApp, MODES } from "./store.jsx";
-import { Toasts, NameModal } from "./components.jsx";
+import { Toasts, NameModal, Aurora } from "./components.jsx";
 import Editor from "./views/Editor.jsx";
 import Voices from "./views/Voices.jsx";
 import Templates from "./views/Templates.jsx";
@@ -27,7 +28,8 @@ const NAV = [
 ];
 
 export default function App() {
-  const { view, setView, mode, status, model, pickModel, refreshStatus, toast, generate } = useApp();
+  const { view, setView, mode, status, model, pickModel, refreshStatus, toast, generate, jobState } = useApp();
+  const busy = jobState.active || jobState.submitting;
 
   useEffect(() => {
     const onKey = (e) => {
@@ -46,9 +48,10 @@ export default function App() {
 
   return (
     <div className="app">
+      <Aurora />
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div className={`brand-eq ${busy ? "fast" : ""}`} aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div className="brand-text">
             <div className="brand-name">声铸 VoiceForge</div>
             <div className="brand-sub">本地语音工坊 · MLX</div>
@@ -99,15 +102,28 @@ export default function App() {
           <p>{meta ? meta[1] : MODES[mode].desc}</p>
         </header>
 
-        {view === "editor" && <Editor />}
-        {view === "voices" && <Voices />}
-        {view === "templates" && <Templates />}
-        {view === "history" && <History />}
-        {view === "dashboard" && <Dashboard />}
-        {view === "settings" && <Settings />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            className="view-motion"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {view === "editor" && <Editor />}
+            {view === "voices" && <Voices />}
+            {view === "templates" && <Templates />}
+            {view === "history" && <History />}
+            {view === "dashboard" && <Dashboard />}
+            {view === "settings" && <Settings />}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      <NameModal />
+      <AnimatePresence>
+        <NameModal />
+      </AnimatePresence>
       <Toasts />
     </div>
   );

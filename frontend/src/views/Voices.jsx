@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import { useApp, MODE_BADGE } from "../store.jsx";
 import { api } from "../api";
 
@@ -42,10 +43,16 @@ export default function Voices() {
           </div>
         </div>
         <div className="voice-grid">
-          {voices.map((v) => {
+          {voices.map((v, idx) => {
             const [cls, label] = MODE_BADGE[v.mode] || MODE_BADGE.design;
             return (
-              <div className="voice-card" key={v.id}>
+              <motion.div
+                className="voice-card"
+                key={v.id}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(idx * 0.06, 0.5), duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <div className="vc-head">
                   <span className="vc-name">{v.name}</span>
                   <span className={`hist-badge ${cls}`}>{label}</span>
@@ -63,7 +70,7 @@ export default function Voices() {
                   <button className="btn primary small" onClick={() => applyVoice(v)}>应用到工作台</button>
                   <button className="btn ghost small" onClick={() => del(v)}>删除</button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

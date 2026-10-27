@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { useApp } from "../store.jsx";
 import { api } from "../api";
 
@@ -116,8 +117,14 @@ export default function Settings() {
       <div className="card dash-card">
         <div className="card-title">预置模型 <span className="label-hint">mlx-audio 生态主流模型，点击即添加并下载</span></div>
         <div className="preset-grid">
-          {PRESETS.map((p) => (
-            <div className="preset-card" key={p.repo}>
+          {PRESETS.map((p, i) => (
+            <motion.div
+              className="preset-card"
+              key={p.repo}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
               <div className="preset-name">{p.name}</div>
               <div className="preset-note">{p.note}</div>
               <div className="preset-repo">{p.repo}</div>
@@ -125,7 +132,7 @@ export default function Settings() {
                 <button className="btn primary small" onClick={() => addPreset(p)}>添加并下载</button>
                 <a className="btn ghost small" href={`https://huggingface.co/${p.repo}`} target="_blank" rel="noreferrer">仓库页</a>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useRef } from "react";
-import { useApp, MODES, escapeHtml } from "../store.jsx";
-import { Waveform } from "../components.jsx";
+import { motion } from "motion/react";
+import { useApp, MODES } from "../store.jsx";
+import { Waveform, Magnetic } from "../components.jsx";
 
 function TagChips() {
   const { status, text, setText, mode } = useApp();
@@ -97,7 +98,12 @@ function OutputCard() {
         </div>
       )}
       {showResult && (
-        <div className="output-result">
+        <motion.div
+          className="output-result"
+          initial={{ opacity: 0, y: 16, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        >
           <Waveform key={result.name} url={result.url} />
           <div className="info-grid">
             <div className="info-item"><div className="k">时长</div><div className="v">{result.duration}s</div></div>
@@ -123,7 +129,7 @@ function OutputCard() {
               查看历史
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -278,11 +284,13 @@ export default function Editor() {
             </div>
           </div>
 
-          <button className="btn primary full generate" onClick={app.generate} disabled={app.jobState.active && !app.jobState.result}>
-            <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5Z" /></svg>
-            生成语音
-            <span className="kbd">⌘↵</span>
-          </button>
+          <Magnetic className="full">
+            <button className="btn primary full generate" onClick={app.generate} disabled={app.jobState.active && !app.jobState.result}>
+              <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5Z" /></svg>
+              生成语音
+              <span className="kbd">⌘↵</span>
+            </button>
+          </Magnetic>
           <div className="form-hint">首次生成会加载模型，需 5–20 秒；纯克隆建议 cfg=1 且不填表演指令。</div>
         </div>
 

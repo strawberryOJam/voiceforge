@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { useApp, MODE_BADGE, PIPELINE } from "../store.jsx";
 import { Pipeline } from "../components.jsx";
 import { api } from "../api";
@@ -45,10 +46,23 @@ export default function Dashboard() {
   return (
     <section className="view">
       <div className="stat-grid">
-        <div className="stat-card"><div className="stat-k">累计生成</div><div className="stat-v">{stats ? stats.total : "-"}</div></div>
-        <div className="stat-card"><div className="stat-k">今日生成</div><div className="stat-v">{stats ? stats.today : "-"}</div></div>
-        <div className="stat-card"><div className="stat-k">音频总大小</div><div className="stat-v">{stats ? (stats.size_mb >= 1024 ? (stats.size_mb / 1024).toFixed(1) + " GB" : stats.size_mb + " MB") : "-"}</div></div>
-        <div className="stat-card"><div className="stat-k">音色库 / 模板</div><div className="stat-v">{stats ? `${stats.voice_count} / ${stats.template_count}` : "-"}</div></div>
+        {[
+          ["累计生成", stats ? stats.total : "-"],
+          ["今日生成", stats ? stats.today : "-"],
+          ["音频总大小", stats ? (stats.size_mb >= 1024 ? (stats.size_mb / 1024).toFixed(1) + " GB" : stats.size_mb + " MB") : "-"],
+          ["音色库 / 模板", stats ? `${stats.voice_count} / ${stats.template_count}` : "-"],
+        ].map(([k, v], i) => (
+          <motion.div
+            className="stat-card"
+            key={k}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="stat-k">{k}</div>
+            <div className="stat-v">{v}</div>
+          </motion.div>
+        ))}
       </div>
 
       <div className="card dash-card">

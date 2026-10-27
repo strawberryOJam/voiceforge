@@ -1,5 +1,59 @@
 import { useEffect, useRef, useState } from "react";
-import { useApp, escapeHtml, PIPELINE } from "./store.jsx";
+import { motion, useReducedMotion, useMotionValue, useSpring } from "motion/react";
+import { useApp, PIPELINE } from "./store.jsx";
+
+/* ---------------- 极光背景 ---------------- */
+export function Aurora() {
+  return (
+    <div className="aurora" aria-hidden="true">
+      <div className="blob-c"></div>
+    </div>
+  );
+}
+
+/* ---------------- 聚光边框卡片 ---------------- */
+export function Spotlight({ children, className = "" }) {
+  const ref = useRef(null);
+  const onMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    el.style.setProperty("--my", (e.clientY - r.top) + "px");
+  };
+  return (
+    <div ref={ref} className={`spotlight ${className}`} onMouseMove={onMove}>
+      {children}
+    </div>
+  );
+}
+
+/* ---------------- 磁吸按钮（仅精细指针 + 非降级动效） ---------------- */
+export function Magnetic({ children, strength = 0.25, className = "" }) {
+  const reduce = useReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 220, damping: 16 });
+  const sy = useSpring(y, { stiffness: 220, damping: 16 });
+  const fine = typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
+
+  if (reduce || !fine) return <div className={className}>{children}</div>;
+
+  return (
+    <motion.div
+      className={className}
+      style={{ x: sx, y: sy, display: "inline-block" }}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        x.set((e.clientX - r.left - r.width / 2) * strength);
+        y.set((e.clientY - r.top - r.height / 2) * strength);
+      }}
+      onMouseLeave={() => { x.set(0); y.set(0); }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 /* ---------------- Toasts ---------------- */
 export function Toasts() {
@@ -7,7 +61,17 @@ export function Toasts() {
   return (
     <div className="toasts">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast ${t.type === "error" ? "error" : ""}`}>{t.msg}</div>
+        <motion.div
+          key={t.id}
+          className={`toast ${t.type === "error" ? "error" : ""}`}
+          initial={{ opacity: 0, x: 40, scale: 0.96 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 40 }}
+          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+          layout
+        >
+          {t.msg}
+        </motion.div>
       ))}
     </div>
   );
@@ -20,8 +84,17 @@ export function NameModal() {
   useEffect(() => { setValue(""); }, [modal]);
   if (!modal) return null;
   return (
-    <div className="modal-mask" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="modal">
+    <motion.div
+      className="modal-mask"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={(e) => e.target === e.currentTarget && closeModal()}
+    >
+      <motion.div
+        className="modal"
+        initial={{ scale: 0.92, y: 14, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 420, damping: 30 }}
+      >
         <div className="modal-title">{modal.title}</div>
         <input
           autoFocus
@@ -36,12 +109,12 @@ export function NameModal() {
           <button className="btn ghost small" onClick={closeModal}>取消</button>
           <button className="btn primary small" onClick={() => confirmModal(value)}>保存</button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
-/* ---------------- 波形 ---------------- */
+/* ---------------- 波形（渐变 + 播放头光晕） ---------------- */
 export function Waveform({ url }) {
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -93,17 +166,32 @@ export function Waveform({ url }) {
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
+
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, "#2dd4bf");
+    grad.addColorStop(1, "#38bdf8");
+
     const n = peaks.length;
     const bw = w / n;
     const mid = h / 2;
     for (let i = 0; i < n; i++) {
       const bh = Math.max(2, peaks[i] * (h - 10));
       const x = i * bw;
-      ctx.fillStyle = x / w <= p ? "#2dd4bf" : "rgba(255,255,255,0.22)";
+      const isPlayed = x / w <= p;
+      ctx.fillStyle = isPlayed ? grad : "rgba(255,255,255,0.22)";
       const bwDraw = Math.max(1, bw * 0.62);
       ctx.beginPath();
       ctx.roundRect(x, mid - bh / 2, bwDraw, bh, bwDraw / 2);
       ctx.fill();
+    }
+    // 播放头光晕
+    if (p > 0 && p < 1) {
+      const px = p * w;
+      const glow = ctx.createRadialGradient(px, mid, 0, px, mid, 26);
+      glow.addColorStop(0, "rgba(45,212,191,.4)");
+      glow.addColorStop(1, "rgba(45,212,191,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(px - 26, 0, 52, h);
     }
   }
 
@@ -173,9 +261,15 @@ export function Pipeline({ job }) {
           <div className="pipe-seg">待命 — 在工作台提交生成任务后，这里会实时显示加工进度</div>
         )}
         {job && job.pipeline && job.pipeline.segments && job.pipeline.segments.map((s, i) => (
-          <div key={i} className={`pipe-seg ${s.status === "running" ? "running" : s.status === "done" ? "done" : ""}`}>
+          <motion.div
+            key={i}
+            className={`pipe-seg ${s.status === "running" ? "running" : s.status === "done" ? "done" : ""}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.3 }}
+          >
             {s.text}
-          </div>
+          </motion.div>
         ))}
       </div>
     </>

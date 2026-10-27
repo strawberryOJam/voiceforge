@@ -826,3 +826,140 @@ input[type="range"]::-moz-range-thumb {
 .about-name { font-size: 16px; font-weight: 700; }
 .about-name span { font-family: var(--mono); font-size: 11px; color: var(--text-faint); font-weight: 400; margin-left: 6px; }
 .about-line { font-size: 12px; color: var(--text-dim); margin-top: 5px; font-family: var(--mono); }
+
+/* ============================================================
+   特效层（design-taste-frontend 重构）— 暗色工作室语言
+   ============================================================ */
+
+/* 展示字体（数值/品牌） */
+.stat-v, .brand-name, .bar-val, .info-item .v, .pipe-dot, .mc-status .status-pill {
+  font-family: "Space Grotesk", var(--mono);
+}
+
+/* ---------- 极光背景（固定层，不随滚动重绘） ---------- */
+.aurora {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.aurora::before, .aurora::after {
+  content: ""; position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: .5;
+  will-change: transform;
+}
+.aurora::before {
+  width: 55vw; height: 55vw; left: -12vw; top: -18vw;
+  background: radial-gradient(circle at 30% 30%, rgba(45,212,191,.14), transparent 65%);
+  animation: blob-a 26s ease-in-out infinite alternate;
+}
+.aurora::after {
+  width: 48vw; height: 48vw; right: -14vw; bottom: -16vw;
+  background: radial-gradient(circle at 60% 60%, rgba(56,189,248,.12), transparent 65%);
+  animation: blob-b 32s ease-in-out infinite alternate;
+}
+.aurora .blob-c {
+  position: absolute; width: 34vw; height: 34vw; left: 38vw; top: 30vh;
+  border-radius: 50%; filter: blur(110px); opacity: .35;
+  background: radial-gradient(circle, rgba(45,212,191,.10), transparent 70%);
+  animation: blob-c 38s ease-in-out infinite alternate;
+}
+@keyframes blob-a {
+  from { transform: translate3d(0,0,0) scale(1); }
+  to   { transform: translate3d(9vw, 7vh, 0) scale(1.18); }
+}
+@keyframes blob-b {
+  from { transform: translate3d(0,0,0) scale(1.1); }
+  to   { transform: translate3d(-8vw, -6vh, 0) scale(.94); }
+}
+@keyframes blob-c {
+  from { transform: translate3d(0,0,0) scale(.9); }
+  to   { transform: translate3d(-6vw, 8vh, 0) scale(1.12); }
+}
+
+/* 内容层抬到极光之上 */
+.app { position: relative; z-index: 1; }
+
+/* ---------- 玻璃卡片（内折射边） ---------- */
+.card, .side-card, .stat-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 34px rgba(0,0,0,.28);
+}
+
+/* ---------- 聚光边框卡片（鼠标追踪） ---------- */
+.spotlight {
+  position: relative;
+  --mx: 50%; --my: 50%;
+}
+.spotlight::before {
+  content: ""; position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(45,212,191,.22), transparent 65%);
+  opacity: 0; transition: opacity .25s ease;
+  pointer-events: none;
+}
+.spotlight:hover::before { opacity: 1; }
+.voice-card.spotlight::before, .preset-card.spotlight::before { border-radius: var(--radius-sm); }
+
+/* ---------- 品牌均衡器：合成中加速 ---------- */
+.brand-eq.fast span { animation-duration: .5s; }
+
+/* ---------- 流水线连接线流动 ---------- */
+.pipe-stage.done::before { background: linear-gradient(90deg, var(--accent), var(--accent)); }
+.pipe-stage.active::before {
+  background: linear-gradient(90deg, var(--accent) 40%, rgba(255,255,255,.25) 60%);
+  background-size: 200% 100%;
+  animation: flow 1.2s linear infinite;
+}
+@keyframes flow {
+  from { background-position: 200% 0; }
+  to   { background-position: -100% 0; }
+}
+.pipe-stage.active .pipe-dot {
+  background: radial-gradient(circle at 35% 35%, #5ff0dd, var(--accent) 70%);
+  box-shadow: 0 0 14px rgba(45,212,191,.55), 0 0 0 4px rgba(45,212,191,.15);
+}
+
+/* ---------- 骨架微光 ---------- */
+.skeleton {
+  position: relative; overflow: hidden;
+  background: rgba(255,255,255,.05); border-radius: 8px;
+}
+.skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* ---------- 生成按钮成功脉冲 ---------- */
+.btn.primary:not(:disabled) { position: relative; overflow: hidden; }
+.btn.primary:not(:disabled)::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.28) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform .7s ease;
+  pointer-events: none;
+}
+.btn.primary:not(:disabled):hover::after { transform: translateX(120%); }
+
+/* ---------- 视图切换基础 ---------- */
+.view-motion { will-change: transform, opacity; }
+
+/* ---------- 输入聚焦光晕 ---------- */
+textarea:focus, input:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(45,212,191,.14), 0 0 18px rgba(45,212,191,.12);
+}
+
+/* ---------- 波形播放头微光 ---------- */
+#waveCanvas { box-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 6px 22px rgba(0,0,0,.3); }
+
+/* ---------- 动效降级（强制） ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before, .aurora::after, .aurora .blob-c,
+  .brand-eq span, .pipe-stage.active::before, .skeleton::after {
+    animation: none !important;
+  }
+  .btn.primary:not(:disabled)::after { display: none; }
+  .spotlight::before { display: none; }
+}
