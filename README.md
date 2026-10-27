@@ -3,6 +3,8 @@
 基于 MLX 的 Apple Silicon 本地语音控制台：音色设计 / 克隆 / 执导 / 多角色对话配音，
 带音色库、文稿模板、加工流水线仪表盘与模型管理中心。
 
+![声铸 VoiceForge 控制台](docs/screenshot.png)
+
 ## 结构
 
 ```
